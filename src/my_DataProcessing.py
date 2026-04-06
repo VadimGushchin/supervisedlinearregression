@@ -18,65 +18,26 @@ def remove_price_outliers(df, column="price", lower_q=0.01, upper_q=0.99):
 
 
 def clean_features(feature_str):
-    """
-    Преобразует строку вида "['Elevator', 'CatsAllowed']" в список ['Elevator', 'CatsAllowed'].
-    """
-    if isinstance(feature_str, float) and pd.isna(feature_str):
-        return []
+    try:
+        if pd.isna(feature_str) or feature_str is None or feature_str == "":
+            return []
+    except:
+        pass
 
-    if feature_str is None:
-        return []
+    # Если список
+    if isinstance(feature_str, list):
+        return feature_str
 
-    if isinstance(feature_str, str) and feature_str.strip() == "":
-        return []
-
+    # Если строка
     text = str(feature_str)
+    if text in ["", "[]", "nan", "None"]:
+        return []
 
     text = text.replace("[", "").replace("]", "")
-
     text = text.replace("'", "").replace('"', "")
 
-    items = []
-    for item in text.split(","):
-        cleaned_item = item.strip()
-        if cleaned_item:
-            items.append(cleaned_item)
-
+    items = [item.strip() for item in text.split(",") if item.strip()]
     return items
-
-
-def normalize_feature_name(name):
-    """
-    Нормализует названия признаков для учёта опечаток.
-    """
-    name = name.lower()
-    replacements = {
-        "laundryinbuilding": "LaundryInBuilding",
-        "laundryinunit": "LaundryInUnit",
-        "pre-war": "Pre-War",
-        "highspeedinternet": "HighSpeedInternet",
-        "outdoorspace": "OutdoorSpace",
-        "roofdeck": "RoofDeck",
-        "fitnesscenter": "FitnessCenter",
-        "newconstruction": "NewConstruction",
-        "nofee": "NoFee",
-        "catsallowed": "CatsAllowed",
-        "dogsallowed": "DogsAllowed",
-        "hardwoodfloors": "HardwoodFloors",
-        "dishwasher": "Dishwasher",
-        "doorman": "Doorman",
-        "elevator": "Elevator",
-        "balcony": "Balcony",
-        "swimmingpool": "SwimmingPool",
-        "diningroom": "DiningRoom",
-        "terrace": "Terrace",
-    }
-
-    for key, value in replacements.items():
-        if key in name:
-            return value
-
-    return name.capitalize()
 
 
 def norm_table():
@@ -209,9 +170,10 @@ def metrics_in_dollars(
         "r2_val": r2_score(y_true_val, y_pred_val_dollars),
     }
 
+
 def format_model_name(model):
     model_str = str(model)
-    
+
     # Определяем тип регуляризации
     if 'Ridge' in model_str:
         reg_type = 'Ridge'
@@ -223,7 +185,7 @@ def format_model_name(model):
         reg_type = 'Linear'
     else:
         reg_type = 'Unknown'
-    
+
     # Определяем наличие Scaler
     if 'StandardScaler' in model_str:
         scaler = 'Standard'
@@ -231,16 +193,16 @@ def format_model_name(model):
         scaler = 'MinMax'
     else:
         scaler = 'NoScaler'
-    
+
     # Извлекаем alpha (если есть)
     import re
     alpha_match = re.search(r'alpha=([\d.]+)', model_str)
     alpha = f"alpha={alpha_match.group(1)}" if alpha_match else ""
-    
+
     # Для ElasticNet извлекаем l1_ratio
     l1_match = re.search(r'l1_ratio=([\d.]+)', model_str)
     l1 = f", l1={l1_match.group(1)}" if l1_match else ""
-    
+
     # Формируем итоговое название
     if reg_type == 'Linear':
         return f"{scaler}+Linear"

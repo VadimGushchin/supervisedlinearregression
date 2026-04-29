@@ -14,22 +14,15 @@ def remove_price_outliers(df, column="price", lower_q=0.01, upper_q=0.99):
 
 
 def clean_features(feature_str):
-    try:
-        if pd.isna(feature_str) or feature_str is None or feature_str == "":
-            return []
-    except:
-        pass
+    if feature_str is None or (isinstance(feature_str, float) and pd.isna(feature_str)):
+        return []
     if isinstance(feature_str, list):
         return feature_str
-    text = str(feature_str)
-    if text in ["", "[]", "nan", "None"]:
+    text = str(feature_str).strip()
+    if text in ("", "[]", "nan", "None"):
         return []
-
-    text = text.replace("[", "").replace("]", "")
-    text = text.replace("'", "").replace('"', "")
-
-    items = [item.strip() for item in text.split(",") if item.strip()]
-    return items
+    text = text.replace("[", "").replace("]", "").replace("'", "").replace('"', "")
+    return [item.strip() for item in text.split(",") if item.strip()]
 
 
 def evaluate_model(model, X_train, y_train, X_val, y_val, model_name):
@@ -60,35 +53,3 @@ def evaluate_model(model, X_train, y_train, X_val, y_val, model_name):
         "r2_train": r2_train,
         "r2_val": r2_val,
     }
-
-
-def train_and_predict(model, X_train, y_train, X_val):
-    """Обучает модель и возвращает предсказания."""
-    model_clone = clone(model)
-    model_clone.fit(X_train, y_train)
-    return {
-        "model": model_clone,
-        "pred_train": model_clone.predict(X_train),
-        "pred_val": model_clone.predict(X_val),
-    }
-
-
-def metrics_in_dollars(
-    y_true_train, y_true_val, y_pred_train, y_pred_val, target_scaler
-):
-    y_pred_train_dollars = target_scaler.inverse_transform(
-        y_pred_train.reshape(-1, 1)
-    ).ravel()
-    y_pred_val_dollars = target_scaler.inverse_transform(
-        y_pred_val.reshape(-1, 1)
-    ).ravel()
-
-    return {
-        "mae_train": mean_absolute_error(y_true_train, y_pred_train_dollars),
-        "mae_val": mean_absolute_error(y_true_val, y_pred_val_dollars),
-        "rmse_train": root_mean_squared_error(y_true_train, y_pred_train_dollars),
-        "rmse_val": root_mean_squared_error(y_true_val, y_pred_val_dollars),
-        "r2_train": r2_score(y_true_train, y_pred_train_dollars),
-        "r2_val": r2_score(y_true_val, y_pred_val_dollars),
-    }
-

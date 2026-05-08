@@ -1,10 +1,12 @@
-from typing import Iterable, Set, Dict, List, Union
 import re
-from collections import Counter
+from collections.abc import Iterable
+from typing import dict, list, set
 
 
 def map_to_groups(features_list, groups_dict):
-    """Возвращает список названий групп, которые покрывают данные фичи."""
+    """
+    Возвращает список названий групп, которые покрывают данные фичи.
+    """
     groups_found = set()
     for f in features_list:
         for group_name, group_features in groups_dict.items():
@@ -15,7 +17,9 @@ def map_to_groups(features_list, groups_dict):
 
 
 def canonicalize(s: str) -> str:
-    """Приводит строку к каноническому виду: нижний регистр, замена разделителей на пробелы, удаление пунктуации."""
+    """
+    Приводит строку к каноническому виду: нижний регистр, замена разделителей на пробелы, удаление пунктуации.
+    """
     if not s:
         return ""
     s = s.lower().strip()
@@ -36,36 +40,36 @@ FEATURE_ALIASES = {
 }
 
 
-def normalize_features(all_features: Iterable[str]) -> List[str]:
+def normalize_features(all_features: Iterable[str]) -> list[str]:
     """
     Нормализует список фич:
     - пропускает None и пустые строки
     - канонизирует каждую фичу
     - применяет алиасы (с повторной канонизацией для исправления дефисов)
-    - возвращает уникальные значения без сортировки (порядок не гарантирован)
+    - возвращает уникальные значения без сортировки
     """
     normalized = []
     for f in all_features:
-        if not f:  # обработка None и пустых строк (п.9)
+        if not f:
             continue
         f = canonicalize(f)
         f = FEATURE_ALIASES.get(f, f)
-        f = canonicalize(f)  # повторная канонизация для дефисов (п.1)
+        f = canonicalize(f)
         normalized.append(f)
-    return list(set(normalized))  # уникальность без сортировки (п.7)
+    return list(set(normalized))
 
 
-def find_substring_matches(keyword: str, all_features: Iterable[str]) -> Set[str]:
+def find_substring_matches(keyword: str, all_features: Iterable[str]) -> set[str]:
     """Возвращает фичи, содержащие keyword как подстроку."""
     k = keyword.lower()
     return {f for f in all_features if k in f}
 
 
-def find_word_matches(keyword: str, all_features: Iterable[str]) -> Set[str]:
+def find_word_matches(keyword: str, all_features: Iterable[str]) -> set[str]:
     """
     Возвращает фичи, содержащие keyword как отдельное слово.
     Ключевое слово канонизируется (чтобы дефисы/пунктуация не мешали, п.10),
-    пустые строки пропускаются (п.6).
+    пустые строки пропускаются.
     """
     k = canonicalize(keyword)
     result = set()
@@ -77,22 +81,19 @@ def find_word_matches(keyword: str, all_features: Iterable[str]) -> Set[str]:
     return result
 
 
-def make_matches(all_features: Iterable[str], *keywords: str) -> Set[str]:
+def make_matches(all_features: Iterable[str], *keywords: str) -> set[str]:
     """Объединяет результаты substring-поиска по нескольким ключевым словам."""
     return set().union(*(find_substring_matches(k, all_features) for k in keywords))
 
 
 def make_matches_filtered(
-    all_features: Iterable[str], keyword: str, exclude: Union[str, Iterable[str]]
-) -> Set[str]:
+    all_features: Iterable[str], keyword: str, exclude: str | Iterable[str]
+) -> set[str]:
     """
     Возвращает фичи, содержащие keyword, но не содержащие ни одного из exclude.
-    exclude может быть строкой или итерируемым объектом строк (п.5).
+    exclude может быть строкой или итерируемым объектом строк.
     """
-    if isinstance(exclude, str):
-        excludes = {exclude}
-    else:
-        excludes = set(exclude)
+    excludes = {exclude} if isinstance(exclude, str) else set(exclude)
 
     return {
         f
@@ -114,7 +115,7 @@ def build_group(all_features, *keywords, filter_fn=None):
     return res
 
 
-def build_feature_groups(all_features: Iterable[str]) -> Dict[str, Set[str]]:
+def build_feature_groups(all_features: Iterable[str]) -> dict[str, set[str]]:
     """
     Строит группы признаков на основе нормализованных данных.
     Все группы строятся из нормализованных фич.
@@ -130,7 +131,6 @@ def build_feature_groups(all_features: Iterable[str]) -> Dict[str, Set[str]]:
             "laundry facility",
             "on site laundry",
         ),
-        # Убран limit_words (п.3) – теперь просто вхождение подстроки
         "pre_war": make_matches(all_features, "pre war", "prewar"),
         "post_war": make_matches(all_features, "post war", "postwar"),
         "doorman": make_matches(all_features, "doorman", "concierge"),
@@ -182,22 +182,13 @@ def build_feature_groups(all_features: Iterable[str]) -> Dict[str, Set[str]]:
     }
 
 
-def build_feature_groups_json(all_features: Iterable[str]) -> Dict[str, List[str]]:
-    """
-    Возвращает группы признаков в формате JSON (списки вместо множеств).
-    Переименовано из build_synonyms (п.8).
-    """
-    return {k: sorted(list(v)) for k, v in build_feature_groups(all_features).items()}
-
-
-def get_final_features(all_features: Iterable[str]) -> List[str]:
+def get_final_features(all_features: Iterable[str]) -> list[str]:
     """
     Возвращает финальный список фич для ML-модели.
     Включает только те признаки, которые попали хотя бы в одну из групп.
-    (Преднамеренное отбрасывание остальных – по замыслу, п.2)
     """
     groups = build_feature_groups(all_features)
     flat = set()
     for v in groups.values():
         flat.update(v)
-    return sorted(flat)  # единственная сортировка (п.7)
+    return sorted(flat)

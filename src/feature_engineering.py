@@ -2,6 +2,7 @@ from typing import Iterable, Set, Dict, List, Union
 import re
 from collections import Counter
 
+
 def map_to_groups(features_list, groups_dict):
     """Возвращает список названий групп, которые покрывают данные фичи."""
     groups_found = set()
@@ -9,8 +10,9 @@ def map_to_groups(features_list, groups_dict):
         for group_name, group_features in groups_dict.items():
             if f in group_features:
                 groups_found.add(group_name)
-                break   
+                break
     return list(groups_found)
+
 
 def canonicalize(s: str) -> str:
     """Приводит строку к каноническому виду: нижний регистр, замена разделителей на пробелы, удаление пунктуации."""
@@ -155,7 +157,7 @@ def build_feature_groups(all_features: Iterable[str]) -> Dict[str, Set[str]]:
         | find_word_matches("dw", all_features),
         "appliances": make_matches(all_features, "stainless steel", "granite"),
         "kitchen": make_matches(all_features, "eat in kitchen", "open kitchen"),
-        "bathroom": make_matches(all_features, "marble bath", "jacuzzi"),
+        "luxury_bathroom": make_matches(all_features, "marble bath", "jacuzzi"),
         # ---- PETS ----
         "pets": make_matches(all_features, "pets", "pet friendly"),
         "no_pets": make_matches(all_features, "no pets"),

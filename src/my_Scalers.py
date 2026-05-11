@@ -38,8 +38,8 @@ class CustomMinMaxScaler:
         else:
             return (x - self.data_min_) / self.data_range_
 
-    def fit_transform(self, X):
-        return self.fit(X).transform(X)
+    def fit_transform(self, x):
+        return self.fit(x).transform(x)
 
 
 class CustomStandardScaler:

@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 
 def great_circle_distance(latitude_1, longitude_1, latitude_2, longitude_2):

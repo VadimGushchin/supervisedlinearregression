@@ -2,12 +2,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def my_histplot(df,
-                title="Распределение",
-                xlabel="Значение",
-                ylabel="Частота",
-                bins=50,
-                figsize=(4, 4),
+def my_histplot(
+    df,
+    title="Распределение",
+    xlabel="Значение",
+    ylabel="Частота",
+    bins=50,
+    figsize=(4, 4),
 ):
     """
     Построение гистограммы
@@ -21,11 +22,7 @@ def my_histplot(df,
     plt.show()
 
 
-def my_boxplot(df, 
-               title="Boxplot", 
-               xlabel="Значение", 
-               figsize=(4, 4)
-):
+def my_boxplot(df, title="Boxplot", xlabel="Значение", figsize=(4, 4)):
     """
     Построение boxplot
     """

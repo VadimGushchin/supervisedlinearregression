@@ -1,9 +1,11 @@
-import pandas as pd
-import numpy as np
-from my_DataProcessing import clean_features
-from feature_engineering import canonicalize, map_to_groups, build_feature_groups
-from sklearn.preprocessing import MultiLabelBinarizer
 from collections import Counter
+
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import MultiLabelBinarizer
+
+from feature_engineering import build_feature_groups, canonicalize, map_to_groups
+from my_DataProcessing import clean_features
 
 
 def prepare_features(
@@ -12,7 +14,7 @@ def prepare_features(
     df_test_raw: pd.DataFrame,
     min_freq: int = 3,
     corr_threshold: float = 0.9,
-    drop_original_cols: list = None,
+    drop_original_cols: list | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Полный пайплайн feature engineering.

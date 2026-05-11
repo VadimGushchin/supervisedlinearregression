@@ -1,10 +1,6 @@
-import matplotlib.pyplot as plt
 import pandas as pd
-import my_LinearRegression as linreg
-import time
+from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 import numpy as np
-from sklearn.metrics import mean_absolute_error, root_mean_squared_error, r2_score
-from sklearn.base import clone
 
 
 def remove_price_outliers(df, column="price", lower_q=0.01, upper_q=0.99):
@@ -25,24 +21,61 @@ def clean_features(feature_str):
     return [item.strip() for item in text.split(",") if item.strip()]
 
 
-def evaluate_model(model, X_train, y_train, X_val, y_val, model_name):
+def evaluate_model(
+    model,
+    x_train,
+    y_train,
+    x_val,
+    y_val,
+    model_name,
+    y_train_orig=None,
+    y_val_orig=None,
+    log_base=np.exp(1)
+):
     """
     Оценивает уже обученную модель на train и val.
+    
+    Параметры
+    ----------
+    model : обученная модель с методом predict
+    x_train, y_train : обучающие данные (в том масштабе, в котором модель обучалась)
+    x_val, y_val : валидационные данные
+    model_name : str
+    y_train_orig, y_val_orig : исходные целевые переменные (до логарифмирования).
+                               Если не указаны, метрики считаются в той же шкале, что и y_train/y_val.
+    log_base : float, необязательный
+               Основание логарифма, если модель обучалась на log_base(y_target).
+               При указании вместе с y_train_orig/y_val_orig предсказания переводятся
+               в исходную шкалу возведением основания в степень предсказания.
     """
-    y_pred_train = model.predict(X_train)
-    y_pred_val = model.predict(X_val)
 
-    mae_train = mean_absolute_error(y_train, y_pred_train)
-    mae_val = mean_absolute_error(y_val, y_pred_val)
-    rmse_train = root_mean_squared_error(y_train, y_pred_train)
-    rmse_val = root_mean_squared_error(y_val, y_pred_val)
+    y_pred_train = model.predict(x_train)
+    y_pred_val = model.predict(x_val)
 
-    if "Custom" in model_name:
-        r2_train = model.rscore(X_train, y_train)
-        r2_val = model.rscore(X_val, y_val)
+    if log_base is not None and y_train_orig is not None and y_val_orig is not None:
+        y_pred_train_orig = np.exp(y_pred_train)
+        y_pred_val_orig = np.exp(y_pred_val)
+
+        mae_train = mean_absolute_error(y_train_orig, y_pred_train_orig)
+        mae_val   = mean_absolute_error(y_val_orig, y_pred_val_orig)
+        rmse_train = root_mean_squared_error(y_train_orig, y_pred_train_orig)
+        rmse_val   = root_mean_squared_error(y_val_orig, y_pred_val_orig)
+
+        r2_train = r2_score(y_train_orig, y_pred_train_orig)
+        r2_val   = r2_score(y_val_orig, y_pred_val_orig)
     else:
-        r2_train = r2_score(y_train, y_pred_train)
-        r2_val = r2_score(y_val, y_pred_val)
+
+        mae_train = mean_absolute_error(y_train, y_pred_train)
+        mae_val   = mean_absolute_error(y_val, y_pred_val)
+        rmse_train = root_mean_squared_error(y_train, y_pred_train)
+        rmse_val   = root_mean_squared_error(y_val, y_pred_val)
+
+        if "Custom" in model_name:
+            r2_train = model.rscore(x_train, y_train)
+            r2_val   = model.rscore(x_val, y_val)
+        else:
+            r2_train = r2_score(y_train, y_pred_train)
+            r2_val   = r2_score(y_val, y_pred_val)
 
     return {
         "model": model_name,

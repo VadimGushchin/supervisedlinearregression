@@ -1,4 +1,3 @@
-from typing import tuple
 import numpy as np
 
 
@@ -32,6 +31,7 @@ class LinearRegression:
         self.patience = patience
         self.optimizer = optimizer
         self.eps = eps
+        self.epoch_callback = None
 
         self.weights = None
         self.bias = None
@@ -137,7 +137,7 @@ class LinearRegression:
         best_loss = float("inf")
         no_improvement = 0
 
-        for _ in range(self.n_iterations):
+        for epoch in range(self.n_iterations):
             if shuffle:
                 indices = self._random_state.permutation(n_samples)
                 x_epoch = x[indices]
@@ -154,6 +154,13 @@ class LinearRegression:
 
                 grad_w, grad_b = self._compute_gradient(x_batch, y_batch)
 
+                max_grad_norm = 1e3
+                grad_norm = np.sqrt(np.sum(grad_w**2) + grad_b**2)
+                if grad_norm > max_grad_norm:
+                    scale = max_grad_norm / grad_norm
+                    grad_w *= scale
+                    grad_b *= scale
+                    
                 if self.optimizer == "sgd":
                     self.weights -= self.learning_rate * grad_w
                     self.bias -= self.learning_rate * grad_b
@@ -175,6 +182,9 @@ class LinearRegression:
 
             avg_loss = epoch_loss / n_samples
             self.loss_history.append(avg_loss)
+
+            if self.epoch_callback is not None:
+                self.epoch_callback(epoch, avg_loss)
 
             # Ранняя остановка
             if avg_loss < best_loss - 1e-4:
@@ -271,9 +281,18 @@ class RegularizedLinearRegression(LinearRegression):
         random_state: int | None = None,
         batch_size: int = 256,
         patience: int = 10,
+        optimizer: str = "sgd",
+        eps: float = 1e-8,
     ):
         super().__init__(
-            method, learning_rate, n_iterations, random_state, batch_size, patience
+            method,
+            learning_rate,
+            n_iterations,
+            random_state,
+            batch_size,
+            patience,
+            optimizer=optimizer,
+            eps=eps,
         )
         self.alpha = alpha
         self.l1_ratio = l1_ratio
@@ -325,6 +344,8 @@ class RidgeRegression(RegularizedLinearRegression):
         random_state: int | None = None,
         batch_size: int = 256,
         patience: int = 10,
+        optimizer: str = "sgd",
+        eps: float = 1e-8,
     ):
         super().__init__(
             alpha=alpha,
@@ -335,6 +356,8 @@ class RidgeRegression(RegularizedLinearRegression):
             random_state=random_state,
             batch_size=batch_size,
             patience=patience,
+            optimizer=optimizer,
+            eps=eps,
         )
 
     def _regularization_gradient(self, weights: np.ndarray) -> np.ndarray:
@@ -370,6 +393,8 @@ class LassoRegression(RegularizedLinearRegression):
         random_state: int | None = None,
         batch_size: int = 256,
         patience: int = 10,
+        optimizer: str = "sgd",
+        eps: float = 1e-8,
     ):
         super().__init__(
             alpha=alpha,
@@ -380,6 +405,8 @@ class LassoRegression(RegularizedLinearRegression):
             random_state=random_state,
             batch_size=batch_size,
             patience=patience,
+            optimizer=optimizer,
+            eps=eps,
         )
 
     def _regularization_gradient(self, weights: np.ndarray) -> np.ndarray:
@@ -397,8 +424,7 @@ class LassoRegression(RegularizedLinearRegression):
         np.ndarray
             Градиент регуляризации.
         """
-        grad = self.alpha * np.sign(weights)
-        return np.clip(grad, -1e3, 1e3)
+        return self.alpha * np.sign(weights)
 
 
 class ElasticNetRegression(RegularizedLinearRegression):
@@ -419,6 +445,8 @@ class ElasticNetRegression(RegularizedLinearRegression):
         random_state: int | None = None,
         batch_size: int = 256,
         patience: int = 10,
+        optimizer: str = "sgd",
+        eps: float = 1e-8,
     ):
         super().__init__(
             alpha=alpha,
@@ -429,6 +457,8 @@ class ElasticNetRegression(RegularizedLinearRegression):
             random_state=random_state,
             batch_size=batch_size,
             patience=patience,
+            optimizer=optimizer,
+            eps=eps,
         )
 
     def _regularization_gradient(self, weights: np.ndarray) -> np.ndarray:

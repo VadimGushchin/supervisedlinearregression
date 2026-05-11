@@ -1,6 +1,5 @@
 import re
 from collections.abc import Iterable
-from typing import dict, list, set
 
 
 def map_to_groups(features_list, groups_dict):

@@ -23,7 +23,7 @@
 ## 📂 Структура репозитория
 
 ```
-supervisedlinearregression/
+supervisedlinearregression/src/
 ├── my_LinearRegression.py          # Кастомная линейная регрессия (GD, SGD, MBGD, Closed-form)
 ├── my_DataProcessing.py            # Утилиты: обработка выбросов, метрики (R2, MAE, RMSE)
 ├── my_Scalers.py                   # Кастомные MinMaxScaler и StandardScaler
